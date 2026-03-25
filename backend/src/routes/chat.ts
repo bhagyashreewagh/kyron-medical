@@ -3,7 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { streamChatResponse, ConversationMessage } from '../services/claude.js';
 import { sendAppointmentConfirmation } from '../services/email.js';
 import { sendAppointmentSMS } from '../services/sms.js';
-import { bookSlot, getDoctorById } from '../data/doctors.js';
+import { bookSlot } from '../data/doctors.js';
+import { createCalendarEvent } from '../services/calendar.js';
 
 const router = Router();
 
@@ -118,6 +119,22 @@ async function processBookingSignal(
       });
     } catch (err) {
       console.error('Email send error:', err);
+    }
+
+    // Create Google Calendar event
+    try {
+      await createCalendarEvent({
+        patientFirstName: payload.patientFirstName,
+        patientLastName: payload.patientLastName,
+        patientEmail: payload.email,
+        doctorName: payload.doctorName,
+        specialty: payload.specialty,
+        date: payload.date,
+        time: payload.time,
+        reason: payload.reason,
+      });
+    } catch (err) {
+      console.error('Calendar error:', err);
     }
 
     // Send SMS if opted in
