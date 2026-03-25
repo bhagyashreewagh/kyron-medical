@@ -1,7 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { buildAvailabilitySummary, DOCTORS } from '../data/doctors.js';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Lazy init so dotenv has time to load before the client is created
+let _anthropic: Anthropic | null = null;
+function getClient(): Anthropic {
+  if (!_anthropic) {
+    const key = process.env.ANTHROPIC_API_KEY || '';
+    // OAuth tokens (sk-ant-oat01-) use Bearer auth; regular keys use X-Api-Key
+    const isOAuth = key.startsWith('sk-ant-oat');
+    _anthropic = new Anthropic(
+      isOAuth
+        ? { authToken: key, baseURL: process.env.ANTHROPIC_BASE_URL }
+        : { apiKey: key }
+    );
+  }
+  return _anthropic;
+}
 
 export interface ConversationMessage {
   role: 'user' | 'assistant';
@@ -93,7 +107,7 @@ export async function streamChatResponse(
 ): Promise<string> {
   const systemPrompt = buildSystemPrompt();
 
-  const stream = anthropic.messages.stream({
+  const stream = getClient().messages.stream({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     system: systemPrompt,
