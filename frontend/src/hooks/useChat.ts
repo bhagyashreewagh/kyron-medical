@@ -114,11 +114,33 @@ export function useChat() {
                       : m
                   )
                 );
-                if (data.booked) setIsBooked(true);
+                if (data.booked) {
+                  setIsBooked(true);
+                  if (data.appointmentDetails) {
+                    const cardMsg: ChatMessage = {
+                      id: uuidv4(),
+                      role: 'appointment-card',
+                      content: JSON.stringify(data.appointmentDetails),
+                      timestamp: new Date(),
+                    };
+                    setMessages((prev) => [...prev, cardMsg]);
+                  }
+                }
               }
 
               if (data.done && data.replaceMessage === undefined) {
-                if (data.booked) setIsBooked(true);
+                if (data.booked) {
+                  setIsBooked(true);
+                  if (data.appointmentDetails) {
+                    const cardMsg: ChatMessage = {
+                      id: uuidv4(),
+                      role: 'appointment-card',
+                      content: JSON.stringify(data.appointmentDetails),
+                      timestamp: new Date(),
+                    };
+                    setMessages((prev) => [...prev, cardMsg]);
+                  }
+                }
                 setMessages((prev) =>
                   prev.map((m) =>
                     m.id === assistantMsgId ? { ...m, isStreaming: false } : m

@@ -4,6 +4,7 @@ import { streamChatResponse } from '../services/claude.js';
 import { sendAppointmentConfirmation } from '../services/email.js';
 import { sendAppointmentSMS } from '../services/sms.js';
 import { bookSlot } from '../data/doctors.js';
+import { createCalendarEvent } from '../services/calendar.js';
 const router = Router();
 export const sessions = new Map();
 // Clean up sessions older than 24h every hour
@@ -70,6 +71,22 @@ async function processBookingSignal(raw, session) {
         catch (err) {
             console.error('Email send error:', err);
         }
+        // Create Google Calendar event
+        try {
+            await createCalendarEvent({
+                patientFirstName: payload.patientFirstName,
+                patientLastName: payload.patientLastName,
+                patientEmail: payload.email,
+                doctorName: payload.doctorName,
+                specialty: payload.specialty,
+                date: payload.date,
+                time: payload.time,
+                reason: payload.reason,
+            });
+        }
+        catch (err) {
+            console.error('Calendar error:', err);
+        }
         // Send SMS if opted in
         if (payload.smsOptIn) {
             try {
@@ -86,7 +103,14 @@ async function processBookingSignal(raw, session) {
             }
         }
         console.log(`✅ Appointment booked: ${payload.patientFirstName} ${payload.patientLastName} with ${payload.doctorName} on ${payload.date} at ${payload.time}`);
-        return { cleanResponse, booked: true };
+        const appointmentDetails = {
+            doctorName: payload.doctorName,
+            specialty: payload.specialty,
+            date: payload.date,
+            time: payload.time,
+            reason: payload.reason,
+        };
+        return { cleanResponse, booked: true, appointmentDetails };
     }
     catch (err) {
         console.error('Failed to parse appointment payload:', err, match[1]);
@@ -118,17 +142,27 @@ router.post('/', async (req, res) => {
     send({ sessionId });
     let fullResponse = '';
     try {
+        // Stream tokens but stop forwarding once the booking marker appears
+        let seenBookingMarker = false;
         fullResponse = await streamChatResponse(session.messages, (chunk) => {
-            // Strip partial booking signals from streaming output
-            const visibleChunk = chunk.replace(/APPOINTMENT_CONFIRMED:[^}]*\}?/g, '');
-            if (visibleChunk)
-                send({ text: visibleChunk });
+            if (seenBookingMarker)
+                return;
+            if (chunk.includes('APPOINTMENT_CONFIRMED:')) {
+                seenBookingMarker = true;
+                // Send the visible part before the marker (if any)
+                const beforeMarker = chunk.split('APPOINTMENT_CONFIRMED:')[0];
+                if (beforeMarker)
+                    send({ text: beforeMarker });
+                return;
+            }
+            send({ text: chunk });
         });
-        // Process booking signal
-        const { cleanResponse, booked } = await processBookingSignal(fullResponse, session);
+        // Process booking signal on full response
+        const { cleanResponse, booked, appointmentDetails } = await processBookingSignal(fullResponse, session);
         // Store clean assistant message in history
         session.messages.push({ role: 'assistant', content: cleanResponse });
-        send({ done: true, booked, sessionId });
+        // Always send replaceMessage so frontend shows final clean text
+        send({ replaceMessage: cleanResponse, done: true, booked, appointmentDetails, sessionId });
     }
     catch (err) {
         console.error('Chat error:', err);

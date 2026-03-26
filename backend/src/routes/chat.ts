@@ -77,10 +77,18 @@ interface AppointmentPayload {
   smsOptIn: boolean;
 }
 
+export interface AppointmentDetails {
+  doctorName: string;
+  specialty: string;
+  date: string;
+  time: string;
+  reason: string;
+}
+
 async function processBookingSignal(
   raw: string,
   session: Session
-): Promise<{ cleanResponse: string; booked: boolean }> {
+): Promise<{ cleanResponse: string; booked: boolean; appointmentDetails?: AppointmentDetails }> {
   const match = raw.match(BOOKING_REGEX);
   if (!match) return { cleanResponse: raw, booked: false };
 
@@ -156,7 +164,15 @@ async function processBookingSignal(
       `✅ Appointment booked: ${payload.patientFirstName} ${payload.patientLastName} with ${payload.doctorName} on ${payload.date} at ${payload.time}`
     );
 
-    return { cleanResponse, booked: true };
+    const appointmentDetails: AppointmentDetails = {
+      doctorName: payload.doctorName,
+      specialty: payload.specialty,
+      date: payload.date,
+      time: payload.time,
+      reason: payload.reason,
+    };
+
+    return { cleanResponse, booked: true, appointmentDetails };
   } catch (err) {
     console.error('Failed to parse appointment payload:', err, match[1]);
     return { cleanResponse, booked: false };
@@ -215,13 +231,13 @@ router.post('/', async (req: Request, res: Response) => {
     });
 
     // Process booking signal on full response
-    const { cleanResponse, booked } = await processBookingSignal(fullResponse, session);
+    const { cleanResponse, booked, appointmentDetails } = await processBookingSignal(fullResponse, session);
 
     // Store clean assistant message in history
     session.messages.push({ role: 'assistant', content: cleanResponse });
 
     // Always send replaceMessage so frontend shows final clean text
-    send({ replaceMessage: cleanResponse, done: true, booked, sessionId });
+    send({ replaceMessage: cleanResponse, done: true, booked, appointmentDetails, sessionId });
   } catch (err) {
     console.error('Chat error:', err);
     send({ error: 'An error occurred. Please try again.', done: true });

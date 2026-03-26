@@ -6,8 +6,10 @@ import dotenv from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // Load .env from project root (backend/dist/ → backend/ → root)
-dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '.env') });
-dotenv.config(); // fallback: .env in cwd
+// __dirname = backend/dist/ → '../..' = project root (Kyron Medical/)
+// override: true forces dotenv to overwrite any empty env vars already set by the OS
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env'), override: true });
+dotenv.config({ override: true }); // fallback: .env in cwd
 import chatRouter from './routes/chat.js';
 import appointmentsRouter from './routes/appointments.js';
 import voiceRouter from './routes/voice.js';

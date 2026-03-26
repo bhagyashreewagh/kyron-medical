@@ -6,6 +6,16 @@ export interface TimeSlot {
   available: boolean;
 }
 
+export interface OfficeHours {
+  monday?: string;
+  tuesday?: string;
+  wednesday?: string;
+  thursday?: string;
+  friday?: string;
+  saturday?: string;
+  sunday?: string;
+}
+
 export interface Doctor {
   id: string;
   name: string;
@@ -14,6 +24,7 @@ export interface Doctor {
   keywords: string[];
   bio: string;
   slots: TimeSlot[];
+  officeHours: OfficeHours;
 }
 
 function formatDisplayDate(date: Date): string {
@@ -78,6 +89,15 @@ export const DOCTORS: Doctor[] = [
     ],
     bio: 'Dr. Sarah Chen is a board-certified orthopedic surgeon with 15 years of experience in sports medicine and joint replacement. She trained at Hospital for Special Surgery in New York.',
     slots: generateSlots('dr-chen', 1),
+    officeHours: {
+      monday: '8:00 AM – 5:00 PM',
+      tuesday: '8:00 AM – 5:00 PM',
+      wednesday: '8:00 AM – 5:00 PM',
+      thursday: '8:00 AM – 5:00 PM',
+      friday: '8:00 AM – 5:00 PM',
+      saturday: '9:00 AM – 12:00 PM',
+      sunday: 'Closed',
+    },
   },
   {
     id: 'dr-johnson',
@@ -93,6 +113,15 @@ export const DOCTORS: Doctor[] = [
     ],
     bio: 'Dr. Marcus Johnson is an interventional cardiologist and Director of the Kyron Cardiac Center. He specializes in preventive cardiology and complex coronary interventions with 18 years of experience.',
     slots: generateSlots('dr-johnson', 2),
+    officeHours: {
+      monday: '7:00 AM – 6:00 PM',
+      tuesday: '7:00 AM – 6:00 PM',
+      wednesday: '7:00 AM – 6:00 PM',
+      thursday: '7:00 AM – 6:00 PM',
+      friday: '7:00 AM – 3:00 PM',
+      saturday: 'Closed',
+      sunday: 'Closed',
+    },
   },
   {
     id: 'dr-patel',
@@ -108,6 +137,15 @@ export const DOCTORS: Doctor[] = [
     ],
     bio: 'Dr. Priya Patel is a double-board-certified dermatologist and dermatopathologist. She specializes in medical, surgical, and cosmetic dermatology with expertise in skin cancer detection and treatment.',
     slots: generateSlots('dr-patel', 3),
+    officeHours: {
+      monday: '9:00 AM – 5:00 PM',
+      tuesday: '9:00 AM – 5:00 PM',
+      wednesday: '9:00 AM – 5:00 PM',
+      thursday: '9:00 AM – 5:00 PM',
+      friday: '9:00 AM – 5:00 PM',
+      saturday: '10:00 AM – 2:00 PM',
+      sunday: 'Closed',
+    },
   },
   {
     id: 'dr-kim',
@@ -124,6 +162,15 @@ export const DOCTORS: Doctor[] = [
     ],
     bio: 'Dr. Robert Kim holds both an MD and PhD in Neuroscience from Johns Hopkins. He specializes in movement disorders, neurodegenerative diseases, and headache management with 20 years of clinical experience.',
     slots: generateSlots('dr-kim', 4),
+    officeHours: {
+      monday: '8:00 AM – 6:00 PM',
+      tuesday: '10:00 AM – 7:00 PM',
+      wednesday: '8:00 AM – 6:00 PM',
+      thursday: '10:00 AM – 7:00 PM',
+      friday: '8:00 AM – 6:00 PM',
+      saturday: 'Closed',
+      sunday: 'Closed',
+    },
   },
   {
     id: 'dr-rodriguez',
@@ -139,6 +186,15 @@ export const DOCTORS: Doctor[] = [
     ],
     bio: 'Dr. Elena Rodriguez is a gastroenterologist and hepatologist with expertise in inflammatory bowel disease, liver disease, and advanced therapeutic endoscopy. She completed her fellowship at UCSF.',
     slots: generateSlots('dr-rodriguez', 5),
+    officeHours: {
+      monday: '8:00 AM – 4:30 PM',
+      tuesday: '8:00 AM – 4:30 PM',
+      wednesday: '8:00 AM – 4:30 PM',
+      thursday: '8:00 AM – 4:30 PM',
+      friday: '8:00 AM – 4:30 PM',
+      saturday: 'By appointment only',
+      sunday: 'Closed',
+    },
   },
 ];
 
@@ -192,6 +248,28 @@ export function bookSlot(slotId: string): boolean {
     }
   }
   return false;
+}
+
+// Build office hours summary for system prompt
+export function buildOfficeHoursSummary(): string {
+  const dayOrder: (keyof OfficeHours)[] = [
+    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+  ];
+  const dayLabels: Record<string, string> = {
+    monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu',
+    friday: 'Fri', saturday: 'Sat', sunday: 'Sun',
+  };
+
+  return DOCTORS.map((doc) => {
+    const lines = dayOrder
+      .map((day) => {
+        const hours = doc.officeHours[day];
+        return hours ? `  ${dayLabels[day]}: ${hours}` : null;
+      })
+      .filter(Boolean)
+      .join('\n');
+    return `${doc.name} (${doc.specialty}):\n${lines}`;
+  }).join('\n\n');
 }
 
 // Build availability summary for system prompt (compact format, next 30 days)

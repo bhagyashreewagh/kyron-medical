@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import { ChatMessage } from '../types';
+import { AppointmentCard } from './AppointmentCard';
 
 interface MessageProps {
   message: ChatMessage;
@@ -10,6 +11,24 @@ function formatTime(date: Date): string {
 }
 
 export function Message({ message }: MessageProps) {
+  // Appointment card inline message
+  if (message.role === 'appointment-card') {
+    try {
+      const details = JSON.parse(message.content);
+      return (
+        <AppointmentCard
+          doctorName={details.doctorName}
+          specialty={details.specialty}
+          date={details.date}
+          time={details.time}
+          reason={details.reason}
+        />
+      );
+    } catch {
+      return null;
+    }
+  }
+
   const isUser = message.role === 'user';
 
   if (isUser) {

@@ -19,5 +19,12 @@ export interface Session {
     lastActivity: Date;
 }
 export declare const sessions: Map<string, Session>;
+export interface AppointmentDetails {
+    doctorName: string;
+    specialty: string;
+    date: string;
+    time: string;
+    reason: string;
+}
 export default router;
 //# sourceMappingURL=chat.d.ts.map

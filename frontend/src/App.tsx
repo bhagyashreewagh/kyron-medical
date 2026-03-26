@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { ChatInterface } from './components/ChatInterface';
+import { WelcomeScreen } from './components/WelcomeScreen';
 
 // ── Animated orb background ─────────────────────────────────────────────────
 function Background() {
@@ -122,14 +124,25 @@ function DoctorsStrip() {
 
 // ── Main App ────────────────────────────────────────────────────────────────
 export default function App() {
+  // Show welcome splash only on first load per session
+  const [showWelcome, setShowWelcome] = useState<boolean>(() => {
+    if (typeof sessionStorage === 'undefined') return false;
+    const seen = sessionStorage.getItem('kyron_welcomed');
+    if (seen) return false;
+    sessionStorage.setItem('kyron_welcomed', '1');
+    return true;
+  });
+
   return (
     <div className="relative w-full h-full flex items-center justify-center p-4">
       <Background />
 
-      <div className="relative z-10 w-full max-w-6xl h-full max-h-[92vh] flex gap-6 page-entry">
+      {showWelcome && <WelcomeScreen onDone={() => setShowWelcome(false)} />}
+
+      <div className="relative z-10 w-full max-w-6xl h-full max-h-[92vh] flex gap-6">
 
         {/* ── Left sidebar — branding ─────────────────────────────────────── */}
-        <div className="hidden lg:flex flex-col justify-between w-64 flex-shrink-0 py-4">
+        <div className="hidden lg:flex flex-col justify-between w-64 flex-shrink-0 py-4 panel-slide-left">
           {/* Logo */}
           <div>
             <div className="flex items-center gap-3 mb-8">
@@ -172,7 +185,7 @@ export default function App() {
 
         {/* ── Chat window ─────────────────────────────────────────────────── */}
         <div
-          className="flex-1 flex flex-col rounded-3xl overflow-hidden"
+          className="flex-1 flex flex-col rounded-3xl overflow-hidden panel-fade-up"
           style={{
             background: 'rgba(5,15,40,0.7)',
             backdropFilter: 'blur(40px) saturate(180%)',
@@ -186,7 +199,7 @@ export default function App() {
         </div>
 
         {/* ── Right sidebar — info panels ─────────────────────────────────── */}
-        <div className="hidden xl:flex flex-col gap-4 w-56 flex-shrink-0 py-4">
+        <div className="hidden xl:flex flex-col gap-4 w-56 flex-shrink-0 py-4 panel-slide-right">
           {/* Privacy notice */}
           <div
             className="rounded-xl p-4"

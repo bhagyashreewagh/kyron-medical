@@ -1,6 +1,6 @@
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'appointment-card';
   content: string;
   timestamp: Date;
   isStreaming?: boolean;

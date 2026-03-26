@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { buildAvailabilitySummary, DOCTORS } from '../data/doctors.js';
+import { buildAvailabilitySummary, buildOfficeHoursSummary, DOCTORS } from '../data/doctors.js';
 
 // Lazy init so dotenv has time to load before the client is created
 let _anthropic: Anthropic | null = null;
@@ -24,6 +24,7 @@ export interface ConversationMessage {
 
 function buildSystemPrompt(): string {
   const availabilitySummary = buildAvailabilitySummary();
+  const officeHoursSummary = buildOfficeHoursSummary();
   const doctorList = DOCTORS.map(
     (d) => `- ${d.name} (${d.title}): ${d.specialty} — ${d.bio}`
   ).join('\n');
@@ -33,12 +34,15 @@ function buildSystemPrompt(): string {
 ABOUT KYRON MEDICAL GROUP:
 - Address: 2847 Madison Avenue, Suite 700, New York, NY 10028
 - Phone: (212) 555-0100
-- Hours: Monday–Friday 8:00 AM – 6:00 PM, Saturday 9:00 AM – 1:00 PM
+- General Hours: Monday–Friday 8:00 AM – 6:00 PM, Saturday 9:00 AM – 1:00 PM
 - Insurance: We accept most major insurance plans including Aetna, Blue Cross Blue Shield, Cigna, UnitedHealth, Medicare, and Medicaid. Call to confirm your specific plan.
 - Parking: Paid parking garage at 2801 Madison Ave. Validated parking for patients.
 
 OUR SPECIALISTS:
 ${doctorList}
+
+INDIVIDUAL DOCTOR OFFICE HOURS:
+${officeHoursSummary}
 
 AVAILABLE APPOINTMENT SLOTS (next 30 days):
 ${availabilitySummary}
@@ -87,6 +91,20 @@ PRESCRIPTION REFILL WORKFLOW
 GENERAL INFORMATION
 ════════════════════════════════════════
 Answer questions about hours, location, insurance, parking, and general practice info using the data above.
+
+════════════════════════════════════════
+PIONEER FEATURES
+════════════════════════════════════════
+RETURNING PATIENT FEATURE: If the patient mentions they've been here before, or if their phone/email matches a previous session, acknowledge their history warmly (e.g., "Welcome back! It's great to hear from you again."). Skip re-asking for information you already have from the conversation.
+
+NEXT AVAILABLE ASAP: If a patient asks for "the next available appointment" or "the soonest appointment" without specifying a doctor, scan all doctors relevant to their condition and offer the absolute soonest available slot across all matching specialists. Present it clearly: "The soonest available appointment is [Date] at [Time] with [Doctor Name] ([Specialty])."
+
+SMART PRE-VISIT PREP: After confirming an appointment, proactively give 1–2 specific preparation tips tailored to the specialty:
+- Cardiology: "Please avoid caffeine 24 hours before your visit and bring a list of any heart medications you currently take."
+- Orthopedics: "Please bring any recent X-rays or MRI images if you have them, and wear comfortable, loose-fitting clothing to allow easy examination of the affected area."
+- Dermatology: "Please arrive with clean skin — avoid applying lotions, makeup, or self-tanner to the areas you'd like examined."
+- Neurology: "Please bring a list of all current medications and note the frequency and duration of any symptoms (e.g., headaches, dizziness) you've been experiencing."
+- Gastroenterology: "Please avoid eating heavy meals for 4–6 hours before your visit and bring any recent lab or imaging results related to your digestive concerns."
 
 ════════════════════════════════════════
 IMPORTANT RULES

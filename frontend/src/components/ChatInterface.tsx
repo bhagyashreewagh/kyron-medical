@@ -6,10 +6,11 @@ import { TypingIndicator } from './TypingIndicator';
 import { VoiceCallButton } from './VoiceCallButton';
 
 const QUICK_PROMPTS = [
-  'Schedule an appointment',
-  'Request a prescription refill',
-  'Office hours & location',
-  'What insurance do you accept?',
+  { label: 'Schedule an appointment', icon: '📅' },
+  { label: "What's the next available appointment?", icon: '⚡' },
+  { label: 'Request a prescription refill', icon: '💊' },
+  { label: 'Office hours & location', icon: '📍' },
+  { label: 'What insurance do you accept?', icon: '🛡️' },
 ];
 
 
@@ -18,7 +19,6 @@ export function ChatInterface() {
     messages,
     isTyping,
     error,
-    isBooked,
     sendMessage,
     initiateVoiceCall,
     getPatientPhone,
@@ -174,22 +174,32 @@ export function ChatInterface() {
 
         {/* Quick prompts */}
         {showQuickPrompts && (
-          <div className="flex flex-wrap gap-2 pl-11 animate-fade-in">
-            {QUICK_PROMPTS.map((prompt) => (
-              <button
-                key={prompt}
-                onClick={() => handleQuickPrompt(prompt)}
-                className="text-xs px-3 py-1.5 rounded-full transition-all hover:scale-105"
-                style={{
-                  background: 'rgba(0,212,255,0.08)',
-                  border: '1px solid rgba(0,212,255,0.2)',
-                  color: '#7dd3fc',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                {prompt}
-              </button>
-            ))}
+          <div
+            className="flex flex-col gap-2 pl-11 pr-2 animate-fade-in"
+            style={{ transition: 'opacity 0.3s ease, transform 0.3s ease' }}
+          >
+            <p className="text-xs font-medium" style={{ color: '#475569' }}>
+              Quick actions
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt.label}
+                  onClick={() => handleQuickPrompt(prompt.label)}
+                  className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl transition-all duration-200 hover:scale-105 hover:-translate-y-0.5"
+                  style={{
+                    background: 'rgba(0,212,255,0.07)',
+                    border: '1px solid rgba(0,212,255,0.18)',
+                    color: '#7dd3fc',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  }}
+                >
+                  <span style={{ fontSize: '13px' }}>{prompt.icon}</span>
+                  {prompt.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -201,24 +211,6 @@ export function ChatInterface() {
         {/* Typing indicator */}
         {isTyping && messages[messages.length - 1]?.role !== 'assistant' && (
           <TypingIndicator />
-        )}
-
-        {/* Appointment booked celebration */}
-        {isBooked && (
-          <div
-            className="mx-auto max-w-sm rounded-2xl p-4 text-center animate-slide-up"
-            style={{
-              background: 'rgba(5,150,105,0.15)',
-              border: '1px solid rgba(52,211,153,0.3)',
-              backdropFilter: 'blur(20px)',
-            }}
-          >
-            <div className="text-2xl mb-1">🎉</div>
-            <p className="text-emerald-400 font-semibold text-sm">Appointment Confirmed!</p>
-            <p className="text-slate-400 text-xs mt-1">
-              A confirmation has been sent to your email.
-            </p>
-          </div>
         )}
 
         {/* Error banner */}
