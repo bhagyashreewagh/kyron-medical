@@ -2,29 +2,46 @@
 
 A full-stack web application providing an intelligent, human-like AI chat assistant for Kyron Medical Group patients. Features appointment scheduling, prescription refills, voice call handoff, and more.
 
+🌐 **Live:** https://kyronmedical.duckdns.org
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, Framer Motion |
-| Backend | Node.js, Express, TypeScript |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS |
+| Backend | Node.js, Express, TypeScript (ESM) |
 | AI Chat | Anthropic Claude (claude-sonnet-4-6) via streaming SSE |
-| Voice AI | Vapi.ai (outbound phone calls with full chat context) |
-| Email | Nodemailer (Gmail / SMTP) |
-| SMS | Twilio |
-| Hosting | AWS EC2 + Nginx + Let's Encrypt SSL |
+| Voice AI | Vapi.ai — outbound calls + inbound call-back continuity |
+| Email | Nodemailer + Brevo SMTP |
+| SMS | Twilio (opt-in) |
+| Calendar | Google Calendar API (service account) |
+| Hosting | AWS EC2 (t3.micro) + Nginx + Let's Encrypt SSL |
+
+---
 
 ## Features
 
-- **Conversational AI intake** — Collects name, DOB, phone, email, and reason naturally
-- **Semantic provider matching** — Routes patients to the right specialist (Orthopedics, Cardiology, Dermatology, Neurology, Gastroenterology)
-- **Real-time slot selection** — 60 days of availability, handles "do you have Tuesday?" style requests
-- **Email confirmation** — Beautiful HTML email sent on booking
-- **SMS opt-in** — Twilio text message reminders (patient must consent)
-- **Voice call handoff** — One click to switch chat → phone call; AI retains full context
-- **Call-back continuity** ⭐ — If a call drops, patient calls back and AI remembers the entire prior conversation
+### Core
+- **Conversational AI intake** — Collects name, DOB, phone, email, and reason naturally in a guided 11-step flow
+- **Semantic provider matching** — Routes patients to the right specialist based on their condition; says "we don't treat that" and offers a referral number otherwise
+- **Real-time slot selection** — 60 days of availability across 5 doctors; handles natural requests like "do you have something on a Tuesday?"
+- **Email confirmation** — HTML email sent automatically on booking via Brevo SMTP
+- **SMS opt-in** — Twilio text reminders; patient must explicitly consent (TCPA compliant)
+- **Voice call handoff** — One-click button switches the chat to a live phone call; Kyra retains the full web chat context seamlessly
 - **Streaming responses** — Claude streams tokens in real-time for a live, human-like feel
-- **Liquid glass UI** — iOS 26-inspired glassmorphism with animated orbs and Kyron Medical branding
+- **Liquid glass UI** — Glassmorphism panels, animated orbs, Kyron Medical navy/cyan branding
+
+### Pioneer Features ⭐
+- **Call-back continuity** — If a call drops and the patient calls back inbound, Vapi fires `assistant-request` → server responds with full prior call transcript injected as context; Kyra picks up exactly where she left off
+- **Next Available ASAP** — Patient asks "what's the soonest appointment?" → Kyra immediately shows the 3 nearest slots across all doctors with no intake required upfront
+- **Returning patient detection** — If name/DOB/phone/email are already in the conversation, Kyra skips re-asking and jumps straight to reason for visit
+- **Smart pre-visit prep** — After confirming, Kyra gives 1–2 specialty-specific tips (e.g. "avoid caffeine 24h before your cardiology visit")
+- **Google Calendar integration** — Auto-creates a calendar event on booking via Google service account
+- **Duplicate booking guard** — Slot-level lock prevents double-booking even across server restarts
+
+---
 
 ## Project Structure
 
@@ -32,37 +49,42 @@ A full-stack web application providing an intelligent, human-like AI chat assist
 kyron-medical/
 ├── backend/
 │   ├── src/
-│   │   ├── data/doctors.ts        # 5 specialists + 60-day availability
+│   │   ├── data/doctors.ts        # 5 specialists + 60-day slot generation
 │   │   ├── services/
-│   │   │   ├── claude.ts          # Anthropic SDK + system prompt
-│   │   │   ├── email.ts           # Nodemailer confirmation emails
+│   │   │   ├── claude.ts          # Anthropic SDK, system prompt, streaming
+│   │   │   ├── email.ts           # Nodemailer HTML confirmation emails
 │   │   │   ├── sms.ts             # Twilio SMS
-│   │   │   └── vapi.ts            # Vapi outbound calls + webhook
+│   │   │   ├── vapi.ts            # Vapi outbound calls + inbound assistant config
+│   │   │   └── calendar.ts        # Google Calendar event creation
 │   │   ├── routes/
-│   │   │   ├── chat.ts            # SSE streaming chat endpoint
-│   │   │   ├── appointments.ts    # Doctors/slots API
-│   │   │   └── voice.ts           # Voice initiation + Vapi webhook
-│   │   └── server.ts              # Express app
+│   │   │   ├── chat.ts            # SSE streaming chat + booking signal parser
+│   │   │   ├── appointments.ts    # Doctors/slots REST API
+│   │   │   └── voice.ts           # Voice initiation + Vapi webhook handler
+│   │   └── server.ts              # Express app entry point
 │   └── package.json
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── ChatInterface.tsx  # Main chat UI
-│   │   │   ├── Message.tsx        # Individual message bubble
-│   │   │   ├── VoiceCallButton.tsx # Phone call trigger
+│   │   │   ├── ChatInterface.tsx  # Main chat UI + voice modal
+│   │   │   ├── Message.tsx        # Message bubble + appointment card
+│   │   │   ├── WelcomeScreen.tsx  # Animated first-visit splash
 │   │   │   └── TypingIndicator.tsx
-│   │   ├── hooks/useChat.ts       # Chat state + SSE streaming
-│   │   └── App.tsx                # Layout + background
+│   │   ├── hooks/useChat.ts       # Chat state + SSE client + card injection
+│   │   └── App.tsx                # Layout, animated background, sidebars
 │   └── package.json
-├── .env.example                   # Required environment variables
-├── deploy.sh                      # One-command EC2 deployment
+├── .env.example                   # All required environment variables
+├── deploy.sh                      # One-command Ubuntu EC2 setup
 └── nginx.conf                     # Reference Nginx config
 ```
+
+---
 
 ## Quick Start (Local)
 
 ### 1. Clone and install
 ```bash
+git clone https://github.com/bhagyashreewagh/kyron-medical.git
+cd kyron-medical
 cd backend && npm install
 cd ../frontend && npm install
 ```
@@ -70,7 +92,7 @@ cd ../frontend && npm install
 ### 2. Configure environment
 ```bash
 cp .env.example .env
-# Edit .env with your API keys
+# Fill in your API keys (see below)
 ```
 
 **Required:**
@@ -81,66 +103,77 @@ cp .env.example .env
 - `VAPI_PHONE_NUMBER_ID` — Provision a phone number in Vapi dashboard
 
 **For emails:**
-- `GMAIL_USER` + `GMAIL_APP_PASSWORD` (easiest), or `SMTP_*` vars
+- `BREVO_API_KEY`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `FROM_EMAIL` (Brevo free tier)
+- Or: `GMAIL_USER` + `GMAIL_APP_PASSWORD`
 
 **For SMS:**
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
 
+**For Google Calendar (optional):**
+- `GOOGLE_SERVICE_ACCOUNT_JSON` — paste entire service account JSON as one line
+- `GOOGLE_CALENDAR_ID` — calendar ID to create events on
+
 ### 3. Run development servers
 ```bash
-# Terminal 1 — Backend
+# Terminal 1 — Backend (port 3001)
 cd backend && npm run dev
 
-# Terminal 2 — Frontend
+# Terminal 2 — Frontend (port 5173)
 cd frontend && npm run dev
 ```
 
 Visit `http://localhost:5173`
 
+---
+
 ## EC2 Deployment
 
 ### Prerequisites
-- Ubuntu 22.04 LTS EC2 instance (t3.small or larger)
+- Ubuntu 22.04 LTS EC2 instance (t3.micro or larger)
 - Elastic IP associated
 - Security group: ports 22, 80, 443 open
-- Domain name pointing to your Elastic IP
+- Domain/subdomain pointing to your Elastic IP (DuckDNS works free)
 
-### Deploy
+### One-command deploy
 ```bash
 # On your EC2 instance:
 export DOMAIN=yourdomain.com
-export EMAIL=admin@yourdomain.com
+export EMAIL=you@email.com
 bash deploy.sh
 ```
 
 Then add your API keys:
 ```bash
-cp /opt/kyron-medical/.env.example /opt/kyron-medical/.env
-nano /opt/kyron-medical/.env
+sudo nano /opt/kyron-medical/.env
 pm2 restart kyron-medical
 ```
 
 ### Vapi Webhook Setup
-In your Vapi dashboard, set the webhook URL to:
+In your [Vapi dashboard](https://vapi.ai) → Phone Numbers → your number → set Server URL to:
 ```
 https://yourdomain.com/api/voice/webhook
 ```
-This enables call-back continuity (AI remembers previous calls).
+This enables **call-back continuity** — when a patient calls inbound, Vapi fires `assistant-request` and the server responds with the full assistant config + previous call context.
+
+---
 
 ## Providers
 
 | Doctor | Specialty | Treats |
 |--------|-----------|--------|
-| Dr. Sarah Chen | Orthopedics | Bones, joints, back pain, sports injuries |
-| Dr. Marcus Johnson | Cardiology | Heart, chest pain, blood pressure |
-| Dr. Priya Patel | Dermatology | Skin, rashes, acne, hair loss |
-| Dr. Robert Kim | Neurology | Brain, headaches, seizures, memory |
-| Dr. Elena Rodriguez | Gastroenterology | Stomach, IBS, GERD, liver |
+| Dr. Sarah Chen | Orthopedics & Sports Medicine | Bones, joints, back pain, sports injuries |
+| Dr. Marcus Johnson | Cardiology | Heart, chest pain, blood pressure, palpitations |
+| Dr. Priya Patel | Dermatology | Skin conditions, rashes, acne, hair loss |
+| Dr. Robert Kim | Neurology | Brain, headaches, migraines, seizures, memory |
+| Dr. Elena Rodriguez | Gastroenterology | Stomach, IBS, GERD, bloating, liver |
+
+---
 
 ## Safety
 
 The AI assistant:
 - **Never** provides medical advice, diagnoses, or treatment recommendations
-- Directs emergencies to 911
-- Requires explicit SMS opt-in (TCPA compliance)
-- Stores no PHI in persistent storage (in-memory sessions only)
+- Directs all emergencies to **911**
+- Requires explicit patient consent before sending SMS (TCPA compliant)
+- Stores no PHI in persistent storage — sessions are in-memory only and expire after 24h
+- Sanitizes all booking signals before storing or displaying to users
