@@ -186,7 +186,8 @@ export async function sendAppointmentConfirmation(appt: AppointmentDetails): Pro
     return;
   }
 
-  const fromAddress = process.env.GMAIL_USER || process.env.SMTP_USER || 'noreply@kyronmedical.com';
+  // Use explicit FROM_EMAIL if set, otherwise fall back to SMTP login
+  const fromAddress = process.env.FROM_EMAIL || process.env.GMAIL_USER || process.env.SMTP_USER || 'noreply@kyronmedical.com';
 
   await transporter.sendMail({
     from: `"Kyron Medical Group" <${fromAddress}>`,
