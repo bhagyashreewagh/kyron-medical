@@ -266,6 +266,25 @@ router.post('/', async (req: Request, res: Response) => {
       if (found) {
         console.log(`👤 Returning patient detected: ${found.firstName} ${found.lastName}`);
       }
+
+      // ── Mid-conversation save ──────────────────────────────────────────────
+      // If we have phone + email from session but no DB record yet, save a stub
+      // so future sessions recognize this patient even without a full booking
+      if (!found && phones.length > 0 && emails.length > 0) {
+        const pi = session.patientInfo;
+        try {
+          savePatient({
+            firstName: pi.firstName || '',
+            lastName: pi.lastName || '',
+            dob: pi.dob || '',
+            phone: phones[0],
+            email: emails[0],
+          });
+          console.log(`👤 Partial patient record saved (mid-conversation)`);
+        } catch (e) {
+          // non-fatal
+        }
+      }
     } catch (err) {
       console.error('Patient lookup error (non-fatal):', err);
     }
