@@ -248,22 +248,26 @@ router.post('/', async (req: Request, res: Response) => {
   // ── Returning patient lookup ───────────────────────────────────────────────
   // Scan all messages so far for phone/email — look up in persistent store
   if (!session.knownPatient) {
-    const allText = session.messages.map((m) => m.content).join(' ');
-    const { phones, emails } = extractContactInfo(allText);
-    let found: PatientRecord | null = null;
-    for (const email of emails) {
-      found = findPatient(email);
-      if (found) break;
-    }
-    if (!found) {
-      for (const phone of phones) {
-        found = findPatient(phone);
+    try {
+      const allText = session.messages.map((m) => m.content).join(' ');
+      const { phones, emails } = extractContactInfo(allText);
+      let found: PatientRecord | null = null;
+      for (const email of emails) {
+        found = findPatient(email);
         if (found) break;
       }
-    }
-    session.knownPatient = found; // null = checked but not found; PatientRecord = found
-    if (found) {
-      console.log(`👤 Returning patient detected: ${found.firstName} ${found.lastName}`);
+      if (!found) {
+        for (const phone of phones) {
+          found = findPatient(phone);
+          if (found) break;
+        }
+      }
+      session.knownPatient = found;
+      if (found) {
+        console.log(`👤 Returning patient detected: ${found.firstName} ${found.lastName}`);
+      }
+    } catch (err) {
+      console.error('Patient lookup error (non-fatal):', err);
     }
   }
 

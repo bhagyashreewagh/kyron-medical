@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Store in /opt/kyron-medical/data/ on server, or <project>/data/ locally
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../../../data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../../data');
 const PATIENTS_FILE = path.join(DATA_DIR, 'patients.json');
 
 export interface PatientRecord {
