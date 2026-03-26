@@ -115,15 +115,13 @@ export function ChatInterface() {
             onInitiateCall={initiateVoiceCall}
             patientPhone={patientPhone}
           />
-          {messages.length > 0 && (
-            <button
-              onClick={handleReset}
-              title="Start new conversation"
-              className="w-9 h-9 rounded-full flex items-center justify-center btn-glass transition-all"
-            >
-              <RotateCcw size={15} className="text-slate-400" />
-            </button>
-          )}
+          <button
+            onClick={handleReset}
+            title="Start new conversation"
+            className="w-9 h-9 rounded-full flex items-center justify-center btn-glass transition-all"
+          >
+            <RotateCcw size={15} className="text-slate-400" />
+          </button>
         </div>
       </div>
 

@@ -35,11 +35,13 @@ A full-stack web application providing an intelligent, human-like AI chat assist
 
 ### Pioneer Features ⭐
 - **Call-back continuity** — If a call drops and the patient calls back inbound, Vapi fires `assistant-request` → server responds with full prior call transcript + patient DB record injected as context; Kyra picks up exactly where she left off — even after server restarts
-- **Persistent returning patient detection** — Patient records saved to `patients.json` on booking (name, DOB, phone, email, last visit, last doctor). On any new session, the moment a matching phone/email appears in chat, Kyra auto-recognizes the patient, greets them by name, and skips all intake questions
+- **Persistent returning patient detection** — Patient records saved to `patients.json` on booking (name, DOB, phone, email, last visit, last doctor). On any new session, the moment a matching phone/email appears in chat, Kyra auto-recognizes the patient, greets them by name, and skips all intake questions. Mid-conversation save triggers as soon as both phone and email are detected — no full booking required
+- **Smart name extraction** — Detects patient name from context (e.g. response after Kyra asks "what's your name?"), not just rigid "my name is X" patterns
 - **Next Available ASAP** — Patient asks "what's the soonest appointment?" → Kyra immediately shows the 3 nearest slots across all doctors with no intake required upfront
 - **Smart pre-visit prep** — After confirming, Kyra gives 1–2 specialty-specific tips (e.g. "avoid caffeine 24h before your cardiology visit")
 - **Google Calendar integration** — Auto-creates a calendar event on booking via Google service account
 - **Duplicate booking guard** — Slot-level lock prevents double-booking even across server restarts
+- **Conversation reset** — Always-visible reset button lets patients start a fresh session from any point in the conversation
 
 ---
 
