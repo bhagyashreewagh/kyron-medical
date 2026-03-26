@@ -1,183 +1,186 @@
 # Kyron Medical — AI Patient Assistant
 
-A full-stack web application providing an intelligent, human-like AI chat assistant for Kyron Medical Group patients. Features appointment scheduling, prescription refills, voice call handoff, and more.
+Kyron Medical is an AI-powered front desk assistant for a medical group. Patients chat with **Kyra** — an AI assistant that books appointments, answers questions, and can even call patients on the phone — all without any human staff involved.
 
-🌐 **Live:** https://kyronmedical.duckdns.org
+🌐 **Live demo:** https://kyronmedical.duckdns.org
 
 ---
 
-## Tech Stack
+## What it does
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS |
-| Backend | Node.js, Express, TypeScript (ESM) |
-| AI Chat | Anthropic Claude (claude-sonnet-4-6) via streaming SSE |
-| Voice AI | Vapi.ai — outbound calls + inbound call-back continuity |
-| Email | Nodemailer + Brevo SMTP |
-| SMS | Twilio (opt-in) |
-| Calendar | Google Calendar API (service account) |
-| Hosting | AWS EC2 (t3.micro) + Nginx + Let's Encrypt SSL |
+A patient visits the site and chats with Kyra. Kyra:
+1. Asks what's wrong and figures out which doctor they need
+2. Shows available appointment slots and books one
+3. Sends a confirmation email (and optional SMS reminder)
+4. Can switch to a real phone call mid-conversation — and remembers everything from the chat
+
+---
+
+## Built With
+
+| What | How |
+|------|-----|
+| Frontend | React + TypeScript + Tailwind CSS |
+| Backend | Node.js + Express + TypeScript |
+| AI | Anthropic Claude (claude-sonnet-4-6) |
+| Voice calls | Vapi.ai |
+| Email | Brevo SMTP |
+| SMS | Twilio |
+| Calendar | Google Calendar API |
+| Hosting | AWS EC2 + Nginx + SSL |
 
 ---
 
 ## Features
 
-### Core
-- **Conversational AI intake** — Collects name, DOB, phone, email, and reason naturally in a guided 11-step flow
-- **Semantic provider matching** — Routes patients to the right specialist based on their condition; says "we don't treat that" and offers a referral number otherwise
-- **Real-time slot selection** — 60 days of availability across 5 doctors; handles natural requests like "do you have something on a Tuesday?"
-- **Email confirmation** — HTML email sent automatically on booking via Brevo SMTP
-- **SMS opt-in** — Twilio text reminders; patient must explicitly consent (TCPA compliant)
-- **Voice call handoff** — One-click button switches the chat to a live phone call; Kyra retains the full web chat context seamlessly
-- **Streaming responses** — Claude streams tokens in real-time for a live, human-like feel
-- **Liquid glass UI** — Glassmorphism panels, animated orbs, Kyron Medical navy/cyan branding
+### The basics
+- **Natural conversation** — Kyra chats like a real receptionist, not a form. Collects name, date of birth, phone, email, and reason for visit naturally
+- **Smart doctor matching** — Describes back pain? Gets routed to Orthopedics. Chest pain? Cardiology. Kyra says "we don't treat that" for anything outside the practice and gives a referral number
+- **Live appointment booking** — 60 days of real slots across 5 doctors. Handles requests like "do you have anything on a Friday afternoon?"
+- **Email confirmation** — Booking confirmation sent automatically with appointment details
+- **SMS reminders** — Optional text reminder; patient must say yes first (legally required)
+- **Phone call handoff** — One button switches from chat to a live phone call with Kyra. She remembers the whole conversation
+- **Typing animation** — Responses stream in real-time, word by word, like a real person typing
 
-### Pioneer Features ⭐
-- **Call-back continuity** — If a call drops and the patient calls back inbound, Vapi fires `assistant-request` → server responds with full prior call transcript + patient DB record injected as context; Kyra picks up exactly where she left off — even after server restarts
-- **Persistent returning patient detection** — Patient records saved to `patients.json` on booking (name, DOB, phone, email, last visit, last doctor). On any new session, the moment a matching phone/email appears in chat, Kyra auto-recognizes the patient, greets them by name, and skips all intake questions. Mid-conversation save triggers as soon as both phone and email are detected — no full booking required
-- **Smart name extraction** — Detects patient name from context (e.g. response after Kyra asks "what's your name?"), not just rigid "my name is X" patterns
-- **Next Available ASAP** — Patient asks "what's the soonest appointment?" → Kyra immediately shows the 3 nearest slots across all doctors with no intake required upfront
-- **Smart pre-visit prep** — After confirming, Kyra gives 1–2 specialty-specific tips (e.g. "avoid caffeine 24h before your cardiology visit")
-- **Google Calendar integration** — Auto-creates a calendar event on booking via Google service account
-- **Duplicate booking guard** — Slot-level lock prevents double-booking even across server restarts
-- **Conversation reset** — Always-visible reset button lets patients start a fresh session from any point in the conversation
+### Pioneer features ⭐
+These go beyond what a standard chatbot does:
 
----
-
-## Project Structure
-
-```
-kyron-medical/
-├── backend/
-│   ├── src/
-│   │   ├── data/doctors.ts        # 5 specialists + 60-day slot generation
-│   │   ├── services/
-│   │   │   ├── claude.ts          # Anthropic SDK, system prompt, streaming
-│   │   │   ├── email.ts           # Nodemailer HTML confirmation emails
-│   │   │   ├── sms.ts             # Twilio SMS
-│   │   │   ├── vapi.ts            # Vapi outbound calls + inbound assistant config (OpenAI nova voice)
-│   │   │   ├── patients.ts        # Persistent patient store (patients.json) for returning patient detection
-│   │   │   └── calendar.ts        # Google Calendar event creation
-│   │   ├── routes/
-│   │   │   ├── chat.ts            # SSE streaming chat + booking signal parser
-│   │   │   ├── appointments.ts    # Doctors/slots REST API
-│   │   │   └── voice.ts           # Voice initiation + Vapi webhook handler
-│   │   └── server.ts              # Express app entry point
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ChatInterface.tsx  # Main chat UI + voice modal
-│   │   │   ├── Message.tsx        # Message bubble + appointment card
-│   │   │   ├── WelcomeScreen.tsx  # Animated first-visit splash
-│   │   │   └── TypingIndicator.tsx
-│   │   ├── hooks/useChat.ts       # Chat state + SSE client + card injection
-│   │   └── App.tsx                # Layout, animated background, sidebars
-│   └── package.json
-├── .env.example                   # All required environment variables
-├── deploy.sh                      # One-command Ubuntu EC2 setup
-└── nginx.conf                     # Reference Nginx config
-```
+- **Call-back continuity** — If a call drops and the patient calls back, Kyra picks up right where she left off. She remembers the patient and the full prior conversation — even if the server restarted
+- **Returning patient detection** — Patient records are saved after booking. Next time a patient chats and gives their phone or email, Kyra instantly recognizes them, greets them by name, and skips all the intake questions
+- **Smart name detection** — Kyra figures out the patient's name from natural replies (e.g. just typing "John Smith" after being asked), not just "my name is John"
+- **Next available ASAP** — Patient says "what's the soonest you have?" → Kyra shows the 3 nearest open slots across all doctors, instantly
+- **Pre-visit tips** — After booking, Kyra gives 1–2 relevant tips based on the specialty (e.g. "avoid caffeine for 24 hours before your cardiology visit")
+- **Google Calendar sync** — A calendar event is created automatically when an appointment is booked
+- **No double-booking** — Slots are locked the moment they're booked. Can't be taken again even if the server restarts
+- **Always-visible reset** — Patients can start a fresh conversation at any time with one click
 
 ---
 
-## Quick Start (Local)
+## Doctors
 
-### 1. Clone and install
+| Doctor | Specialty |
+|--------|-----------|
+| Dr. Sarah Chen | Orthopedics & Sports Medicine |
+| Dr. Marcus Johnson | Cardiology |
+| Dr. Priya Patel | Dermatology |
+| Dr. Robert Kim | Neurology |
+| Dr. Elena Rodriguez | Gastroenterology |
+
+---
+
+## How to run it locally
+
+### Step 1 — Clone and install
 ```bash
 git clone https://github.com/bhagyashreewagh/kyron-medical.git
 cd kyron-medical
+
 cd backend && npm install
 cd ../frontend && npm install
 ```
 
-### 2. Configure environment
+### Step 2 — Add your API keys
 ```bash
 cp .env.example .env
-# Fill in your API keys (see below)
+# Open .env and fill in your keys
 ```
 
-**Required:**
-- `ANTHROPIC_API_KEY` — [Anthropic Console](https://console.anthropic.com)
+**You need:**
+- `ANTHROPIC_API_KEY` → get it at [console.anthropic.com](https://console.anthropic.com)
 
 **For voice calls:**
-- `VAPI_API_KEY` — [Vapi Dashboard](https://vapi.ai)
-- `VAPI_PHONE_NUMBER_ID` — Provision a phone number in Vapi dashboard
+- `VAPI_API_KEY` and `VAPI_PHONE_NUMBER_ID` → [vapi.ai](https://vapi.ai)
 
-**For emails:**
-- `BREVO_API_KEY`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `FROM_EMAIL` (Brevo free tier)
-- Or: `GMAIL_USER` + `GMAIL_APP_PASSWORD`
+**For email:**
+- `BREVO_API_KEY`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `FROM_EMAIL` (Brevo has a free tier)
+- Or use Gmail: `GMAIL_USER` + `GMAIL_APP_PASSWORD`
 
 **For SMS:**
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
 
 **For Google Calendar (optional):**
-- `GOOGLE_SERVICE_ACCOUNT_JSON` — paste entire service account JSON as one line
-- `GOOGLE_CALENDAR_ID` — calendar ID to create events on
+- `GOOGLE_SERVICE_ACCOUNT_JSON` — paste your service account JSON as one line
+- `GOOGLE_CALENDAR_ID` — the calendar to add events to
 
-### 3. Run development servers
+### Step 3 — Start the servers
 ```bash
-# Terminal 1 — Backend (port 3001)
+# Terminal 1
 cd backend && npm run dev
 
-# Terminal 2 — Frontend (port 5173)
+# Terminal 2
 cd frontend && npm run dev
 ```
 
-Visit `http://localhost:5173`
+Open **http://localhost:5173**
 
 ---
 
-## EC2 Deployment
+## Deploying to AWS EC2
 
-### Prerequisites
-- Ubuntu 22.04 LTS EC2 instance (t3.micro or larger)
-- Elastic IP associated
-- Security group: ports 22, 80, 443 open
-- Domain/subdomain pointing to your Elastic IP (DuckDNS works free)
+### What you need
+- Ubuntu 22.04 EC2 instance (t3.micro is fine)
+- A domain or subdomain pointing to your server's IP (DuckDNS is free)
+- Ports 22, 80, and 443 open in your security group
 
-### One-command deploy
+### One command to deploy
 ```bash
-# On your EC2 instance:
 export DOMAIN=yourdomain.com
 export EMAIL=you@email.com
 bash deploy.sh
 ```
 
-Then add your API keys:
+Then add your API keys on the server:
 ```bash
 sudo nano /opt/kyron-medical/.env
 pm2 restart kyron-medical
 ```
 
-### Vapi Webhook Setup
-In your [Vapi dashboard](https://vapi.ai) → Phone Numbers → your number → set Server URL to:
+### Set up the Vapi webhook
+In your Vapi dashboard → Phone Numbers → your number → Server URL:
 ```
 https://yourdomain.com/api/voice/webhook
 ```
-This enables **call-back continuity** — when a patient calls inbound, Vapi fires `assistant-request` and the server responds with the full assistant config + previous call context.
+This is what powers **call-back continuity** — Vapi pings this URL when a patient calls in, and the server responds with Kyra's full config + the patient's previous conversation.
 
 ---
 
-## Providers
+## Project structure
 
-| Doctor | Specialty | Treats |
-|--------|-----------|--------|
-| Dr. Sarah Chen | Orthopedics & Sports Medicine | Bones, joints, back pain, sports injuries |
-| Dr. Marcus Johnson | Cardiology | Heart, chest pain, blood pressure, palpitations |
-| Dr. Priya Patel | Dermatology | Skin conditions, rashes, acne, hair loss |
-| Dr. Robert Kim | Neurology | Brain, headaches, migraines, seizures, memory |
-| Dr. Elena Rodriguez | Gastroenterology | Stomach, IBS, GERD, bloating, liver |
+```
+kyron-medical/
+├── backend/
+│   └── src/
+│       ├── data/doctors.ts          # 5 doctors + 60-day slot generation
+│       ├── services/
+│       │   ├── claude.ts            # AI system prompt + streaming
+│       │   ├── vapi.ts              # Voice call setup (OpenAI nova voice)
+│       │   ├── patients.ts          # Returning patient storage (patients.json)
+│       │   ├── email.ts             # Booking confirmation emails
+│       │   ├── sms.ts               # Twilio SMS reminders
+│       │   └── calendar.ts          # Google Calendar event creation
+│       └── routes/
+│           ├── chat.ts              # Main chat API (streaming SSE)
+│           ├── appointments.ts      # Doctors & slots API
+│           └── voice.ts             # Voice call + Vapi webhook
+├── frontend/
+│   └── src/
+│       ├── components/
+│       │   ├── ChatInterface.tsx    # Main chat UI
+│       │   ├── Message.tsx          # Message bubbles + appointment card
+│       │   └── WelcomeScreen.tsx    # Animated intro screen
+│       └── hooks/useChat.ts         # Chat logic + streaming client
+├── .env.example                     # All env variables with descriptions
+├── deploy.sh                        # Full EC2 setup in one script
+└── nginx.conf                       # Nginx config reference
+```
 
 ---
 
 ## Safety
 
-The AI assistant:
-- **Never** provides medical advice, diagnoses, or treatment recommendations
-- Directs all emergencies to **911**
-- Requires explicit patient consent before sending SMS (TCPA compliant)
-- In-memory chat sessions expire after 24h
-- Patient records (name, DOB, phone, email) persisted to `patients.json` for returning patient detection — no sensitive medical data stored
-- Sanitizes all booking signals before storing or displaying to users
+Kyra is a scheduling assistant, not a medical provider:
+- Never gives medical advice, diagnoses, or treatment recommendations
+- Always directs emergencies to **911**
+- Only sends SMS after the patient explicitly agrees (TCPA compliant)
+- Patient data stored: name, DOB, phone, email, last visit — nothing medical
+- Chat sessions expire after 24 hours
