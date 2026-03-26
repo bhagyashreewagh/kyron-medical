@@ -55,8 +55,19 @@ router.post('/initiate', async (req: Request, res: Response) => {
     });
   } catch (err: unknown) {
     console.error('Voice call error:', err);
-    const message = err instanceof Error ? err.message : String(err);
-    res.status(500).json({ error: 'Failed to initiate call: ' + message });
+    // Extract real Vapi error message from axios response
+    const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+    const vapiMsg = axiosErr?.response?.data?.message || '';
+    let userMessage = 'Failed to initiate call. Please try again.';
+    if (vapiMsg.toLowerCase().includes('daily outbound call limit')) {
+      userMessage = 'Daily call limit reached on this number. Please try again after 8 PM ET, or call us directly at (212) 555-0100.';
+    } else if (vapiMsg) {
+      userMessage = vapiMsg;
+    } else if (err instanceof Error) {
+      userMessage = err.message;
+    }
+    console.error('Vapi error detail:', vapiMsg || (err instanceof Error ? err.message : String(err)));
+    res.status(500).json({ error: userMessage });
   }
 });
 
