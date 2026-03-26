@@ -86,8 +86,8 @@ export async function initiateVoiceCall(params: {
           temperature: 0.7,
         },
         voice: {
-          provider: '11labs',
-          voiceId: process.env.ELEVENLABS_VOICE_ID || 'EXAVITQu4vr4xnSDxMaL', // Sarah voice
+          provider: 'openai',
+          voiceId: 'nova', // warm female voice, no extra API key needed
         },
         firstMessage: `Hi ${patientName}! This is Kyra from Kyron Medical. I'm continuing our conversation from the chat — I have your information on file. ${getHandoffGreeting(params.messages, params.patientInfo)}`,
         firstMessageMode: 'assistant-speaks-first',
@@ -102,6 +102,7 @@ export async function initiateVoiceCall(params: {
     }
   );
 
+  console.log(`📞 Call initiated successfully! Call ID: ${response.data.id}, Status: ${response.data.status}, To: ${toNumber}`);
   return {
     callId: response.data.id,
     status: response.data.status,
