@@ -126,6 +126,43 @@ function getHandoffGreeting(
   return `How can I help you today?`;
 }
 
+// Build assistant config for inbound calls (call-back continuity)
+export function buildInboundAssistantConfig(callerPhone: string): object {
+  const apiKey = process.env.VAPI_API_KEY;
+  const callHistory = getCallHistory(callerPhone);
+
+  let context = '';
+  if (callHistory.length > 0) {
+    const lastCall = callHistory[callHistory.length - 1];
+    context = `PREVIOUS CALL CONTEXT:\nThis patient has called before. Here is a summary of their last call:\n${lastCall.summary}\n\nIMPORTANT: Greet them warmly by name if known, acknowledge the previous interaction, and pick up where you left off. Do NOT ask for information already collected.`;
+  } else {
+    context = 'This is a new patient calling in. Greet them warmly and offer to help schedule an appointment or answer questions.';
+  }
+
+  const systemPrompt = buildVoiceSystemPrompt(context);
+
+  const greeting = callHistory.length > 0
+    ? `Hi! This is Kyra from Kyron Medical. Welcome back — I have your previous call on file. How can I help you today?`
+    : `Thank you for calling Kyron Medical. This is Kyra, your virtual health assistant. How can I help you today?`;
+
+  return {
+    name: 'Kyra',
+    model: {
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      messages: [{ role: 'system', content: systemPrompt }],
+      temperature: 0.7,
+    },
+    voice: {
+      provider: '11labs',
+      voiceId: process.env.ELEVENLABS_VOICE_ID || 'EXAVITQu4vr4xnSDxMaL',
+    },
+    firstMessage: greeting,
+    firstMessageMode: 'assistant-speaks-first',
+    endCallPhrases: ['goodbye', 'bye', 'thank you goodbye', "that's all"],
+  };
+}
+
 // Store call transcripts for call-back continuity
 export interface CallRecord {
   callId: string;

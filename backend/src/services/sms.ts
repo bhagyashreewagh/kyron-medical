@@ -1,4 +1,4 @@
-import axios from 'axios';
+import twilio from 'twilio';
 
 interface AppointmentDetails {
   patientFirstName: string;
@@ -24,32 +24,19 @@ function normalizePhone(phone: string): string {
 }
 
 export async function sendAppointmentSMS(appt: AppointmentDetails): Promise<void> {
-  const apiKey = process.env.BREVO_API_KEY;
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 
-  if (!apiKey) {
-    console.log('📱 SMS (Brevo not configured) — Would send to:', appt.patientPhone);
+  if (!accountSid || !authToken || !fromNumber) {
+    console.log('📱 SMS (Twilio not configured) — Would send to:', appt.patientPhone);
     return;
   }
 
-  const recipient = normalizePhone(appt.patientPhone);
-  const content = `Kyron Medical: Hi ${appt.patientFirstName}! Your appointment with ${appt.doctorName} is confirmed for ${formatDateShort(appt.date)} at ${appt.time}. To reschedule call (212) 555-0100. Reply STOP to unsubscribe.`;
+  const client = twilio(accountSid, authToken);
+  const to = normalizePhone(appt.patientPhone);
+  const body = `Kyron Medical: Hi ${appt.patientFirstName}! Your appointment with ${appt.doctorName} is confirmed for ${formatDateShort(appt.date)} at ${appt.time}. To reschedule call (212) 555-0100. Reply STOP to unsubscribe.`;
 
-  const response = await axios.post(
-    'https://api.brevo.com/v3/transactionalSMS/sms',
-    {
-      sender: 'KyronMed',
-      recipient,
-      content,
-      type: 'transactional',
-    },
-    {
-      headers: {
-        'api-key': apiKey,
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      },
-    }
-  );
-
-  console.log('📱 SMS sent to', recipient, '| Brevo status:', response.status, JSON.stringify(response.data));
+  await client.messages.create({ body, from: fromNumber, to });
+  console.log('📱 SMS sent via Twilio to', to);
 }

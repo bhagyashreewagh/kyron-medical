@@ -198,11 +198,13 @@ export function bookSlot(slotId) {
     for (const doctor of DOCTORS) {
         const slot = doctor.slots.find((s) => s.id === slotId);
         if (slot) {
+            if (!slot.available)
+                return 'already_booked';
             slot.available = false;
-            return true;
+            return 'booked';
         }
     }
-    return false;
+    return 'not_found';
 }
 // Build office hours summary for system prompt
 export function buildOfficeHoursSummary() {

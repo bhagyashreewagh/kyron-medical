@@ -92,9 +92,9 @@ async function processBookingSignal(
   const match = raw.match(BOOKING_REGEX);
   if (!match) return { cleanResponse: raw, booked: false };
 
-  // Guard: only book once per session — prevent duplicate emails/SMS/cards
+  // Guard: only book once per session (survives restarts via slot state)
   if (session.patientInfo.bookedAppointment) {
-    console.log('⚠️ Booking signal received but appointment already booked for this session — ignoring duplicate.');
+    console.log('⚠️ Duplicate booking signal in session — ignoring.');
     const cleanResponse = raw.replace(BOOKING_REGEX, '').trim();
     return { cleanResponse, booked: false };
   }
@@ -117,8 +117,15 @@ async function processBookingSignal(
       bookedAppointment: `${payload.date} at ${payload.time} with ${payload.doctorName}`,
     };
 
-    // Mark slot as booked
-    if (payload.slotId) bookSlot(payload.slotId);
+    // Mark slot as booked — if already booked, skip all confirmations
+    if (payload.slotId) {
+      const slotResult = bookSlot(payload.slotId);
+      if (slotResult === 'already_booked') {
+        console.log('⚠️ Slot already booked — suppressing duplicate email/SMS.');
+        const cleanResponse = raw.replace(BOOKING_REGEX, '').trim();
+        return { cleanResponse, booked: false };
+      }
+    }
 
     // Send confirmation email
     try {

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { sessions } from './chat.js';
-import { initiateVoiceCall, storeCallRecord, getCallHistory } from '../services/vapi.js';
+import { initiateVoiceCall, storeCallRecord, getCallHistory, buildInboundAssistantConfig } from '../services/vapi.js';
 
 const router = Router();
 
@@ -63,9 +63,21 @@ router.post('/initiate', async (req: Request, res: Response) => {
 // POST /api/voice/webhook — Vapi webhook for call events (call-back continuity)
 router.post('/webhook', async (req: Request, res: Response) => {
   const event = req.body;
-  console.log('📞 Vapi webhook event:', event?.message?.type);
+  const eventType = event?.message?.type;
+  console.log('📞 Vapi webhook event:', eventType);
 
-  if (event?.message?.type === 'end-of-call-report') {
+  // ── assistant-request: inbound call needs assistant config ──────────────────
+  if (eventType === 'assistant-request') {
+    const callerPhone = event?.message?.call?.customer?.number || '';
+    console.log('📞 Inbound call from:', callerPhone);
+
+    const assistantConfig = buildInboundAssistantConfig(callerPhone);
+    res.json({ assistant: assistantConfig });
+    return;
+  }
+
+  // ── end-of-call-report: store transcript for future call-back continuity ────
+  if (eventType === 'end-of-call-report') {
     const { call, transcript, summary } = event.message;
     const customerPhone = call?.customer?.number || '';
 

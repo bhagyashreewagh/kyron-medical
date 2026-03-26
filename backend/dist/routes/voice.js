@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { sessions } from './chat.js';
-import { initiateVoiceCall, storeCallRecord, getCallHistory } from '../services/vapi.js';
+import { initiateVoiceCall, storeCallRecord, getCallHistory, buildInboundAssistantConfig } from '../services/vapi.js';
 const router = Router();
 // POST /api/voice/initiate — trigger outbound call, passing chat context
 router.post('/initiate', async (req, res) => {
@@ -52,8 +52,18 @@ router.post('/initiate', async (req, res) => {
 // POST /api/voice/webhook — Vapi webhook for call events (call-back continuity)
 router.post('/webhook', async (req, res) => {
     const event = req.body;
-    console.log('📞 Vapi webhook event:', event?.message?.type);
-    if (event?.message?.type === 'end-of-call-report') {
+    const eventType = event?.message?.type;
+    console.log('📞 Vapi webhook event:', eventType);
+    // ── assistant-request: inbound call needs assistant config ──────────────────
+    if (eventType === 'assistant-request') {
+        const callerPhone = event?.message?.call?.customer?.number || '';
+        console.log('📞 Inbound call from:', callerPhone);
+        const assistantConfig = buildInboundAssistantConfig(callerPhone);
+        res.json({ assistant: assistantConfig });
+        return;
+    }
+    // ── end-of-call-report: store transcript for future call-back continuity ────
+    if (eventType === 'end-of-call-report') {
         const { call, transcript, summary } = event.message;
         const customerPhone = call?.customer?.number || '';
         if (customerPhone && (transcript || summary)) {
