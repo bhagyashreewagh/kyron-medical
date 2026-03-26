@@ -272,10 +272,14 @@ router.post('/', async (req: Request, res: Response) => {
       // so future sessions recognize this patient even without a full booking
       if (!found && phones.length > 0 && emails.length > 0) {
         const pi = session.patientInfo;
+        // Try to extract name from conversation text if not in patientInfo yet
+        const nameMatch = allText.match(/(?:my name is|I(?:'m| am))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
+        const extractedName = nameMatch ? nameMatch[1].trim() : '';
+        const nameParts = extractedName.split(' ');
         try {
           savePatient({
-            firstName: pi.firstName || '',
-            lastName: pi.lastName || '',
+            firstName: pi.firstName || nameParts[0] || '',
+            lastName: pi.lastName || nameParts[1] || '',
             dob: pi.dob || '',
             phone: phones[0],
             email: emails[0],

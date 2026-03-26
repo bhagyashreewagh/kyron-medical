@@ -29,24 +29,24 @@ function buildSystemPrompt(returningPatient?: ReturningPatient | null): string {
     (d) => `- ${d.name} (${d.title}): ${d.specialty} — ${d.bio}`
   ).join('\n');
 
+  const hasName = returningPatient && (returningPatient.firstName || returningPatient.lastName);
   const returningPatientBlock = returningPatient
     ? `
 ⚠️ RETURNING PATIENT DETECTED — CRITICAL INSTRUCTIONS:
-A patient record was found in our database matching the phone number or email in this conversation.
-Their information is already on file — DO NOT ask for any of the following fields again:
+A patient record was found in our database. Do NOT re-ask for any field already on file:
 
-✅ Full Name: ${returningPatient.firstName} ${returningPatient.lastName}
-✅ Date of Birth: ${returningPatient.dob}
+${hasName ? `✅ Full Name: ${returningPatient.firstName} ${returningPatient.lastName}` : `❌ Name: not on file — ask for it once`}
+${returningPatient.dob ? `✅ Date of Birth: ${returningPatient.dob}` : `❌ DOB: not on file — ask for it once`}
 ✅ Phone: ${returningPatient.phone}
 ✅ Email: ${returningPatient.email}
 ${returningPatient.lastVisit ? `✅ Last Visit: ${returningPatient.lastVisit} with ${returningPatient.lastDoctor || 'our practice'}` : ''}
-${returningPatient.lastReason ? `✅ Last Reason: ${returningPatient.lastReason}` : ''}
 
 MANDATORY BEHAVIOR:
-- Greet them warmly: "Welcome back, ${returningPatient.firstName}! Great to have you again. 😊"
-- Tell them you already have their details on file — no need to re-enter anything.
-- Skip Steps 1, 2, 3, and 4 entirely. Go directly to Step 5 (reason for visit).
-- Use the above name, DOB, phone, and email in the booking signal — do NOT ask the patient to repeat them.
+- Greet them: "${hasName ? `Welcome back, ${returningPatient.firstName}! Great to have you again. 😊` : `Welcome back! Great to hear from you again. 😊`}"
+- Tell them you have their phone and email on file.
+- Only ask for fields marked ❌ above. Skip all fields marked ✅.
+- Once you have the missing fields, go to Step 5 (reason for visit).
+- Use all collected data in the booking signal.
 `
     : '';
 
