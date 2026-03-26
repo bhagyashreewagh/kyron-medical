@@ -272,10 +272,31 @@ router.post('/', async (req: Request, res: Response) => {
       // so future sessions recognize this patient even without a full booking
       if (!found && phones.length > 0 && emails.length > 0) {
         const pi = session.patientInfo;
-        // Try to extract name from conversation text if not in patientInfo yet
-        const nameMatch = allText.match(/(?:my name is|I(?:'m| am))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
-        const extractedName = nameMatch ? nameMatch[1].trim() : '';
-        const nameParts = extractedName.split(' ');
+        // Extract name: look for user message right after Kyra asked for name
+        let extractedName = '';
+        const msgs = session.messages;
+        for (let i = 1; i < msgs.length; i++) {
+          const prev = msgs[i - 1];
+          const curr = msgs[i];
+          if (
+            prev.role === 'assistant' &&
+            /name|first.*last|full name/i.test(prev.content) &&
+            curr.role === 'user'
+          ) {
+            const candidate = curr.content.trim();
+            // Accept if it looks like a name: 1-3 words, mostly letters
+            if (/^[A-Za-z]+([\s'-][A-Za-z]+){0,2}$/.test(candidate) && candidate.length < 40) {
+              extractedName = candidate;
+              break;
+            }
+          }
+        }
+        // Fallback: "my name is X"
+        if (!extractedName) {
+          const m = allText.match(/(?:my name is|I(?:'m| am))\s+([A-Za-z]+(?: [A-Za-z]+)?)/i);
+          if (m) extractedName = m[1].trim();
+        }
+        const nameParts = extractedName.split(/\s+/);
         try {
           savePatient({
             firstName: pi.firstName || nameParts[0] || '',
