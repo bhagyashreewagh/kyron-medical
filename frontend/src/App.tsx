@@ -98,23 +98,23 @@ const DOCTORS = [
 
 function DoctorsStrip() {
   return (
-    <div className="hidden lg:flex flex-col gap-3">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-1">
+    <div className="hidden lg:flex flex-col gap-2.5">
+      <p style={{ fontSize: '11px', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', paddingLeft: '4px' }}>
         Our Specialists
       </p>
       {DOCTORS.map((doc) => (
         <div
           key={doc.name}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-default"
+          className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all cursor-default"
           style={{
             background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.06)',
           }}
         >
-          <span className="text-lg">{doc.icon}</span>
+          <span style={{ fontSize: '20px' }}>{doc.icon}</span>
           <div>
-            <p className="text-xs font-medium text-slate-300 leading-tight">{doc.name}</p>
-            <p className="text-xs text-slate-500">{doc.specialty}</p>
+            <p style={{ fontSize: '15px', fontWeight: 500, color: '#cbd5e1', lineHeight: '1.3' }}>{doc.name}</p>
+            <p style={{ fontSize: '13px', color: '#64748b', marginTop: '1px' }}>{doc.specialty}</p>
           </div>
         </div>
       ))}
@@ -157,8 +157,8 @@ export default function App() {
                 <span className="text-white font-bold text-base">K</span>
               </div>
               <div>
-                <p className="text-white font-bold text-sm leading-tight">KYRON</p>
-                <p className="text-xs font-medium leading-tight" style={{ color: '#00d4ff' }}>
+                <p style={{ fontSize: '17px', fontWeight: 700, color: '#fff', lineHeight: '1.2' }}>KYRON</p>
+                <p style={{ fontSize: '14px', fontWeight: 600, color: '#00d4ff', lineHeight: '1.2', letterSpacing: '0.05em' }}>
                   MEDICAL
                 </p>
               </div>
@@ -169,17 +169,18 @@ export default function App() {
 
           {/* Bottom info */}
           <div
-            className="rounded-xl p-4 text-xs"
+            className="rounded-xl p-4"
             style={{
               background: 'rgba(255,255,255,0.03)',
               border: '1px solid rgba(255,255,255,0.06)',
+              fontSize: '15px',
             }}
           >
-            <p className="text-slate-400 font-medium mb-1">📍 New York, NY</p>
-            <p className="text-slate-500">2847 Madison Ave, Suite 700</p>
-            <p className="text-slate-500 mt-1">📞 (212) 555-0100</p>
-            <p className="text-slate-500 mt-1">Mon–Fri 8AM–6PM</p>
-            <p className="text-slate-500">Sat 9AM–1PM</p>
+            <p style={{ color: '#94a3b8', fontWeight: 500, marginBottom: '4px' }}>📍 New York, NY</p>
+            <p style={{ color: '#64748b' }}>2847 Madison Ave, Suite 700</p>
+            <p style={{ color: '#64748b', marginTop: '6px' }}>📞 (212) 555-0100</p>
+            <p style={{ color: '#64748b', marginTop: '6px' }}>Mon–Fri 8AM–6PM</p>
+            <p style={{ color: '#64748b' }}>Sat 9AM–1PM</p>
           </div>
         </div>
 
@@ -208,8 +209,8 @@ export default function App() {
               border: '1px solid rgba(255,255,255,0.06)',
             }}
           >
-            <p className="text-xs font-semibold text-slate-400 mb-2">🔒 Privacy</p>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p style={{ fontSize: '15px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>🔒 Privacy</p>
+            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
               Your conversation is encrypted and handled with HIPAA-compliant protocols.
             </p>
           </div>
@@ -222,8 +223,8 @@ export default function App() {
               border: '1px solid rgba(255,255,255,0.06)',
             }}
           >
-            <p className="text-xs font-semibold text-slate-400 mb-3">✨ Features</p>
-            <div className="space-y-2.5">
+            <p style={{ fontSize: '15px', fontWeight: 600, color: '#94a3b8', marginBottom: '10px' }}>✨ Features</p>
+            <div className="space-y-3">
               {[
                 ['📅', 'Appointment scheduling'],
                 ['💊', 'Prescription refills'],
@@ -231,9 +232,9 @@ export default function App() {
                 ['📧', 'Email confirmation'],
                 ['📱', 'SMS reminders'],
               ].map(([icon, label]) => (
-                <div key={label} className="flex items-center gap-2">
-                  <span className="text-sm">{icon}</span>
-                  <span className="text-xs text-slate-500">{label}</span>
+                <div key={label} className="flex items-center gap-2.5">
+                  <span style={{ fontSize: '15px' }}>{icon}</span>
+                  <span style={{ fontSize: '14px', color: '#64748b' }}>{label}</span>
                 </div>
               ))}
             </div>
@@ -247,10 +248,10 @@ export default function App() {
               border: '1px solid rgba(220,38,38,0.15)',
             }}
           >
-            <p className="text-xs font-semibold text-red-400 mb-1">🚨 Emergency</p>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p style={{ fontSize: '15px', fontWeight: 600, color: '#f87171', marginBottom: '6px' }}>🚨 Emergency</p>
+            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
               If you're experiencing a medical emergency, call{' '}
-              <strong className="text-red-400">911</strong> immediately.
+              <strong style={{ color: '#f87171' }}>911</strong> immediately.
             </p>
           </div>
         </div>

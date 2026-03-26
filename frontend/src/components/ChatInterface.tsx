@@ -146,7 +146,7 @@ export function ChatInterface() {
           </div>
           <div className="max-w-[85%]">
             <div
-              className="px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed"
+              className="px-4 py-3 rounded-2xl rounded-tl-sm text-base leading-relaxed"
               style={{
                 background: 'rgba(15,36,96,0.4)',
                 backdropFilter: 'blur(20px)',
@@ -186,7 +186,7 @@ export function ChatInterface() {
                 <button
                   key={prompt.label}
                   onClick={() => handleQuickPrompt(prompt.label)}
-                  className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl transition-all duration-200 hover:scale-105 hover:-translate-y-0.5"
+                  className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl transition-all duration-200 hover:scale-105 hover:-translate-y-0.5"
                   style={{
                     background: 'rgba(0,212,255,0.07)',
                     border: '1px solid rgba(0,212,255,0.18)',
@@ -258,7 +258,7 @@ export function ChatInterface() {
             onKeyDown={handleKeyDown}
             placeholder="Message Kyra..."
             rows={1}
-            className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-500 outline-none resize-none py-1.5"
+            className="flex-1 bg-transparent text-base text-slate-200 placeholder-slate-500 outline-none resize-none py-1.5"
             style={{ maxHeight: '120px', lineHeight: '1.5' }}
             disabled={isTyping}
           />

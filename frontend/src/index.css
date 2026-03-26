@@ -17,6 +17,7 @@ body {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   background: #020b18;
   color: #e8f0fe;
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

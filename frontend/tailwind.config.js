@@ -3,6 +3,15 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontSize: {
+        'xs':   ['12px',  { lineHeight: '17px' }],
+        'sm':   ['14px',  { lineHeight: '20px' }],
+        'base': ['15px',  { lineHeight: '23px' }],
+        'lg':   ['18px',  { lineHeight: '27px' }],
+        'xl':   ['21px',  { lineHeight: '29px' }],
+        '2xl':  ['25px',  { lineHeight: '33px' }],
+        '3xl':  ['30px',  { lineHeight: '38px' }],
+      },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
         inter: ['Inter', 'system-ui', 'sans-serif'],

@@ -92,6 +92,13 @@ async function processBookingSignal(
   const match = raw.match(BOOKING_REGEX);
   if (!match) return { cleanResponse: raw, booked: false };
 
+  // Guard: only book once per session — prevent duplicate emails/SMS/cards
+  if (session.patientInfo.bookedAppointment) {
+    console.log('⚠️ Booking signal received but appointment already booked for this session — ignoring duplicate.');
+    const cleanResponse = raw.replace(BOOKING_REGEX, '').trim();
+    return { cleanResponse, booked: false };
+  }
+
   const cleanResponse = raw.replace(BOOKING_REGEX, '').trim();
 
   try {

@@ -36,7 +36,7 @@ export function Message({ message }: MessageProps) {
       <div className="flex justify-end animate-slide-in-right">
         <div className="max-w-[80%] sm:max-w-[70%]">
           <div
-            className="px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed"
+            className="px-4 py-3 rounded-2xl rounded-tr-sm text-base leading-relaxed"
             style={{
               background: 'linear-gradient(135deg, #1a3a8f 0%, #1d4ed8 100%)',
               boxShadow: '0 4px 16px rgba(26,58,143,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
@@ -72,7 +72,7 @@ export function Message({ message }: MessageProps) {
       <div className="max-w-[85%] sm:max-w-[75%]">
         {/* Bubble */}
         <div
-          className="px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed"
+          className="px-4 py-3 rounded-2xl rounded-tl-sm text-base leading-relaxed"
           style={{
             background: 'rgba(15,36,96,0.4)',
             backdropFilter: 'blur(20px)',

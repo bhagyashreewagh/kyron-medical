@@ -31,6 +31,7 @@ export function useChat() {
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isBooked, setIsBooked] = useState(false);
+  const cardInjectedRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const sendMessage = useCallback(
@@ -114,7 +115,8 @@ export function useChat() {
                       : m
                   )
                 );
-                if (data.booked) {
+                if (data.booked && !cardInjectedRef.current) {
+                  cardInjectedRef.current = true;
                   setIsBooked(true);
                   if (data.appointmentDetails) {
                     const cardMsg: ChatMessage = {
@@ -123,13 +125,21 @@ export function useChat() {
                       content: JSON.stringify(data.appointmentDetails),
                       timestamp: new Date(),
                     };
-                    setMessages((prev) => [...prev, cardMsg]);
+                    // Insert card RIGHT after the booking message, not at the end
+                    setMessages((prev) => {
+                      const idx = prev.findIndex((m) => m.id === assistantMsgId);
+                      if (idx === -1) return [...prev, cardMsg];
+                      const next = [...prev];
+                      next.splice(idx + 1, 0, cardMsg);
+                      return next;
+                    });
                   }
                 }
               }
 
               if (data.done && data.replaceMessage === undefined) {
-                if (data.booked) {
+                if (data.booked && !cardInjectedRef.current) {
+                  cardInjectedRef.current = true;
                   setIsBooked(true);
                   if (data.appointmentDetails) {
                     const cardMsg: ChatMessage = {
@@ -138,7 +148,13 @@ export function useChat() {
                       content: JSON.stringify(data.appointmentDetails),
                       timestamp: new Date(),
                     };
-                    setMessages((prev) => [...prev, cardMsg]);
+                    setMessages((prev) => {
+                      const idx = prev.findIndex((m) => m.id === assistantMsgId);
+                      if (idx === -1) return [...prev, cardMsg];
+                      const next = [...prev];
+                      next.splice(idx + 1, 0, cardMsg);
+                      return next;
+                    });
                   }
                 }
                 setMessages((prev) =>
@@ -220,6 +236,7 @@ export function useChat() {
     setIsTyping(false);
     setError(null);
     setIsBooked(false);
+    cardInjectedRef.current = false;
   }, []);
 
   return {
