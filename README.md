@@ -34,9 +34,9 @@ A full-stack web application providing an intelligent, human-like AI chat assist
 - **Liquid glass UI** — Glassmorphism panels, animated orbs, Kyron Medical navy/cyan branding
 
 ### Pioneer Features ⭐
-- **Call-back continuity** — If a call drops and the patient calls back inbound, Vapi fires `assistant-request` → server responds with full prior call transcript injected as context; Kyra picks up exactly where she left off
+- **Call-back continuity** — If a call drops and the patient calls back inbound, Vapi fires `assistant-request` → server responds with full prior call transcript + patient DB record injected as context; Kyra picks up exactly where she left off — even after server restarts
+- **Persistent returning patient detection** — Patient records saved to `patients.json` on booking (name, DOB, phone, email, last visit, last doctor). On any new session, the moment a matching phone/email appears in chat, Kyra auto-recognizes the patient, greets them by name, and skips all intake questions
 - **Next Available ASAP** — Patient asks "what's the soonest appointment?" → Kyra immediately shows the 3 nearest slots across all doctors with no intake required upfront
-- **Returning patient detection** — If name/DOB/phone/email are already in the conversation, Kyra skips re-asking and jumps straight to reason for visit
 - **Smart pre-visit prep** — After confirming, Kyra gives 1–2 specialty-specific tips (e.g. "avoid caffeine 24h before your cardiology visit")
 - **Google Calendar integration** — Auto-creates a calendar event on booking via Google service account
 - **Duplicate booking guard** — Slot-level lock prevents double-booking even across server restarts
@@ -54,7 +54,8 @@ kyron-medical/
 │   │   │   ├── claude.ts          # Anthropic SDK, system prompt, streaming
 │   │   │   ├── email.ts           # Nodemailer HTML confirmation emails
 │   │   │   ├── sms.ts             # Twilio SMS
-│   │   │   ├── vapi.ts            # Vapi outbound calls + inbound assistant config
+│   │   │   ├── vapi.ts            # Vapi outbound calls + inbound assistant config (OpenAI nova voice)
+│   │   │   ├── patients.ts        # Persistent patient store (patients.json) for returning patient detection
 │   │   │   └── calendar.ts        # Google Calendar event creation
 │   │   ├── routes/
 │   │   │   ├── chat.ts            # SSE streaming chat + booking signal parser
@@ -175,5 +176,6 @@ The AI assistant:
 - **Never** provides medical advice, diagnoses, or treatment recommendations
 - Directs all emergencies to **911**
 - Requires explicit patient consent before sending SMS (TCPA compliant)
-- Stores no PHI in persistent storage — sessions are in-memory only and expire after 24h
+- In-memory chat sessions expire after 24h
+- Patient records (name, DOB, phone, email) persisted to `patients.json` for returning patient detection — no sensitive medical data stored
 - Sanitizes all booking signals before storing or displaying to users
