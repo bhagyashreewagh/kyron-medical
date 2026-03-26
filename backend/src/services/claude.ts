@@ -22,14 +22,35 @@ export interface ConversationMessage {
   content: string;
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(returningPatient?: ReturningPatient | null): string {
   const availabilitySummary = buildAvailabilitySummary();
   const officeHoursSummary = buildOfficeHoursSummary();
   const doctorList = DOCTORS.map(
     (d) => `- ${d.name} (${d.title}): ${d.specialty} — ${d.bio}`
   ).join('\n');
 
-  return `You are Kyra, a warm, professional, and empathetic virtual health assistant for Kyron Medical Group. You help patients schedule appointments, check on prescription refills, and answer questions about the practice. You speak in a friendly, conversational tone — never robotic or overly formal.
+  const returningPatientBlock = returningPatient
+    ? `
+⚠️ RETURNING PATIENT DETECTED — CRITICAL INSTRUCTIONS:
+A patient record was found in our database matching the phone number or email in this conversation.
+Their information is already on file — DO NOT ask for any of the following fields again:
+
+✅ Full Name: ${returningPatient.firstName} ${returningPatient.lastName}
+✅ Date of Birth: ${returningPatient.dob}
+✅ Phone: ${returningPatient.phone}
+✅ Email: ${returningPatient.email}
+${returningPatient.lastVisit ? `✅ Last Visit: ${returningPatient.lastVisit} with ${returningPatient.lastDoctor || 'our practice'}` : ''}
+${returningPatient.lastReason ? `✅ Last Reason: ${returningPatient.lastReason}` : ''}
+
+MANDATORY BEHAVIOR:
+- Greet them warmly: "Welcome back, ${returningPatient.firstName}! Great to have you again. 😊"
+- Tell them you already have their details on file — no need to re-enter anything.
+- Skip Steps 1, 2, 3, and 4 entirely. Go directly to Step 5 (reason for visit).
+- Use the above name, DOB, phone, and email in the booking signal — do NOT ask the patient to repeat them.
+`
+    : '';
+
+  return `You are Kyra, a warm, professional, and empathetic virtual health assistant for Kyron Medical Group.${returningPatientBlock} You help patients schedule appointments, check on prescription refills, and answer questions about the practice. You speak in a friendly, conversational tone — never robotic or overly formal.
 
 ABOUT KYRON MEDICAL GROUP:
 - Address: 2847 Madison Avenue, Suite 700, New York, NY 10028
@@ -153,11 +174,23 @@ IMPORTANT RULES
 - Always address the patient by their first name once you have it.`;
 }
 
+export interface ReturningPatient {
+  firstName: string;
+  lastName: string;
+  dob: string;
+  phone: string;
+  email: string;
+  lastVisit?: string;
+  lastDoctor?: string;
+  lastReason?: string;
+}
+
 export async function streamChatResponse(
   messages: ConversationMessage[],
-  onChunk: (text: string) => void
+  onChunk: (text: string) => void,
+  returningPatient?: ReturningPatient | null
 ): Promise<string> {
-  const systemPrompt = buildSystemPrompt();
+  const systemPrompt = buildSystemPrompt(returningPatient);
 
   const stream = getClient().messages.stream({
     model: 'claude-sonnet-4-6',

@@ -5,6 +5,7 @@ import { sendAppointmentConfirmation } from '../services/email.js';
 import { sendAppointmentSMS } from '../services/sms.js';
 import { bookSlot } from '../data/doctors.js';
 import { createCalendarEvent } from '../services/calendar.js';
+import { savePatient, findPatient, extractContactInfo, PatientRecord } from '../services/patients.js';
 
 const router = Router();
 
@@ -26,6 +27,7 @@ export interface Session {
   id: string;
   messages: ConversationMessage[];
   patientInfo: PatientInfo;
+  knownPatient?: PatientRecord | null; // populated when returning patient detected
   createdAt: Date;
   lastActivity: Date;
 }
@@ -125,6 +127,22 @@ async function processBookingSignal(
         const cleanResponse = raw.replace(BOOKING_REGEX, '').trim();
         return { cleanResponse, booked: false };
       }
+    }
+
+    // Persist patient for future returning-patient detection
+    try {
+      savePatient({
+        firstName: payload.patientFirstName,
+        lastName: payload.patientLastName,
+        dob: payload.dob,
+        phone: payload.phone,
+        email: payload.email,
+        lastVisit: `${payload.date} at ${payload.time}`,
+        lastDoctor: payload.doctorName,
+        lastReason: payload.reason,
+      });
+    } catch (err) {
+      console.error('Patient save error:', err);
     }
 
     // Send confirmation email
@@ -227,6 +245,28 @@ router.post('/', async (req: Request, res: Response) => {
   // Send sessionId immediately
   send({ sessionId });
 
+  // ── Returning patient lookup ───────────────────────────────────────────────
+  // Scan all messages so far for phone/email — look up in persistent store
+  if (!session.knownPatient) {
+    const allText = session.messages.map((m) => m.content).join(' ');
+    const { phones, emails } = extractContactInfo(allText);
+    let found: PatientRecord | null = null;
+    for (const email of emails) {
+      found = findPatient(email);
+      if (found) break;
+    }
+    if (!found) {
+      for (const phone of phones) {
+        found = findPatient(phone);
+        if (found) break;
+      }
+    }
+    session.knownPatient = found; // null = checked but not found; PatientRecord = found
+    if (found) {
+      console.log(`👤 Returning patient detected: ${found.firstName} ${found.lastName}`);
+    }
+  }
+
   let fullResponse = '';
 
   try {
@@ -236,13 +276,12 @@ router.post('/', async (req: Request, res: Response) => {
       if (seenBookingMarker) return;
       if (chunk.includes('APPOINTMENT_CONFIRMED:')) {
         seenBookingMarker = true;
-        // Send the visible part before the marker (if any)
         const beforeMarker = chunk.split('APPOINTMENT_CONFIRMED:')[0];
         if (beforeMarker) send({ text: beforeMarker });
         return;
       }
       send({ text: chunk });
-    });
+    }, session.knownPatient ?? null);
 
     // Process booking signal on full response
     const { cleanResponse, booked, appointmentDetails } = await processBookingSignal(fullResponse, session);
