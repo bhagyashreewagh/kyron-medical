@@ -273,11 +273,11 @@ export function buildOfficeHoursSummary(): string {
   }).join('\n\n');
 }
 
-// Build availability summary for system prompt (compact format, next 30 days)
+// Build availability summary for system prompt (compact format, next 14 days)
 export function buildAvailabilitySummary(): string {
   const cutoff = new Date('2026-03-26');
   const endDate = new Date(cutoff);
-  endDate.setDate(endDate.getDate() + 30);
+  endDate.setDate(endDate.getDate() + 14);
 
   return DOCTORS.map((doc) => {
     const upcoming = doc.slots
@@ -285,7 +285,7 @@ export function buildAvailabilitySummary(): string {
         const d = new Date(s.date);
         return s.available && d >= cutoff && d <= endDate;
       })
-      .slice(0, 40); // limit per doctor
+      .slice(0, 20); // limit per doctor
 
     const slotLines = upcoming
       .map((s) => `  - ${s.displayDate} at ${s.time} [ID: ${s.id}]`)
