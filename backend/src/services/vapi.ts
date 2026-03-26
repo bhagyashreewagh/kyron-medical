@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { buildAvailabilitySummary, DOCTORS } from '../data/doctors.js';
 import { ConversationMessage, buildVoiceHandoffContext } from './claude.js';
+import { findPatient } from './patients.js';
 
 const VAPI_API_URL = 'https://api.vapi.ai';
 
@@ -128,22 +129,52 @@ function getHandoffGreeting(
 
 // Build assistant config for inbound calls (call-back continuity)
 export function buildInboundAssistantConfig(callerPhone: string): object {
-  const apiKey = process.env.VAPI_API_KEY;
   const callHistory = getCallHistory(callerPhone);
 
+  // Also check persistent patient store (survives server restarts)
+  const persistedPatient = findPatient(callerPhone);
+
   let context = '';
+  let greeting = `Thank you for calling Kyron Medical. This is Kyra, your virtual health assistant. How can I help you today?`;
+
   if (callHistory.length > 0) {
+    // Best case: in-memory call transcript available
     const lastCall = callHistory[callHistory.length - 1];
-    context = `PREVIOUS CALL CONTEXT:\nThis patient has called before. Here is a summary of their last call:\n${lastCall.summary}\n\nIMPORTANT: Greet them warmly by name if known, acknowledge the previous interaction, and pick up where you left off. Do NOT ask for information already collected.`;
+    const patientName = persistedPatient ? `${persistedPatient.firstName}` : 'there';
+    context = `PREVIOUS CALL CONTEXT:
+This patient has called before. Summary of their last call:
+${lastCall.summary}
+
+${persistedPatient ? `PATIENT ON FILE:
+- Name: ${persistedPatient.firstName} ${persistedPatient.lastName}
+- DOB: ${persistedPatient.dob}
+- Phone: ${persistedPatient.phone}
+- Email: ${persistedPatient.email}
+- Last Visit: ${persistedPatient.lastVisit || 'N/A'} with ${persistedPatient.lastDoctor || 'our practice'}
+` : ''}
+IMPORTANT: Greet them by name, acknowledge the previous call, pick up where you left off. Do NOT re-ask for information already collected.`;
+    greeting = `Hi ${patientName}! This is Kyra from Kyron Medical. Welcome back — I have your previous conversation on file. How can I help you today?`;
+
+  } else if (persistedPatient) {
+    // Server restarted — no call transcript but patient exists in DB
+    context = `RETURNING PATIENT FROM DATABASE:
+This patient has visited Kyron Medical before. Their details are on file:
+- Name: ${persistedPatient.firstName} ${persistedPatient.lastName}
+- DOB: ${persistedPatient.dob}
+- Phone: ${persistedPatient.phone}
+- Email: ${persistedPatient.email}
+- Last Visit: ${persistedPatient.lastVisit || 'N/A'} with ${persistedPatient.lastDoctor || 'our practice'}
+- Last Reason: ${persistedPatient.lastReason || 'N/A'}
+
+IMPORTANT: Greet them warmly by name. Tell them you have their details on file. Do NOT ask for name, DOB, phone, or email again. Ask how you can help them today.`;
+    greeting = `Hi ${persistedPatient.firstName}! This is Kyra from Kyron Medical. Great to hear from you again — I have your details on file. How can I help you today?`;
+
   } else {
+    // Brand new caller
     context = 'This is a new patient calling in. Greet them warmly and offer to help schedule an appointment or answer questions.';
   }
 
   const systemPrompt = buildVoiceSystemPrompt(context);
-
-  const greeting = callHistory.length > 0
-    ? `Hi! This is Kyra from Kyron Medical. Welcome back — I have your previous call on file. How can I help you today?`
-    : `Thank you for calling Kyron Medical. This is Kyra, your virtual health assistant. How can I help you today?`;
 
   return {
     name: 'Kyra',
