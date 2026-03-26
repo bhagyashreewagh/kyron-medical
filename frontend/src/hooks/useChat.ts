@@ -105,7 +105,19 @@ export function useChat() {
                 );
               }
 
-              if (data.done) {
+              // Backend sends final clean text — replace streamed content
+              if (data.replaceMessage !== undefined) {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsgId
+                      ? { ...m, content: data.replaceMessage, isStreaming: false }
+                      : m
+                  )
+                );
+                if (data.booked) setIsBooked(true);
+              }
+
+              if (data.done && data.replaceMessage === undefined) {
                 if (data.booked) setIsBooked(true);
                 setMessages((prev) =>
                   prev.map((m) =>

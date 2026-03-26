@@ -200,19 +200,28 @@ router.post('/', async (req: Request, res: Response) => {
   let fullResponse = '';
 
   try {
+    // Stream tokens but stop forwarding once the booking marker appears
+    let seenBookingMarker = false;
     fullResponse = await streamChatResponse(session.messages, (chunk) => {
-      // Strip partial booking signals from streaming output
-      const visibleChunk = chunk.replace(/APPOINTMENT_CONFIRMED:[^}]*\}?/g, '');
-      if (visibleChunk) send({ text: visibleChunk });
+      if (seenBookingMarker) return;
+      if (chunk.includes('APPOINTMENT_CONFIRMED:')) {
+        seenBookingMarker = true;
+        // Send the visible part before the marker (if any)
+        const beforeMarker = chunk.split('APPOINTMENT_CONFIRMED:')[0];
+        if (beforeMarker) send({ text: beforeMarker });
+        return;
+      }
+      send({ text: chunk });
     });
 
-    // Process booking signal
+    // Process booking signal on full response
     const { cleanResponse, booked } = await processBookingSignal(fullResponse, session);
 
     // Store clean assistant message in history
     session.messages.push({ role: 'assistant', content: cleanResponse });
 
-    send({ done: true, booked, sessionId });
+    // Always send replaceMessage so frontend shows final clean text
+    send({ replaceMessage: cleanResponse, done: true, booked, sessionId });
   } catch (err) {
     console.error('Chat error:', err);
     send({ error: 'An error occurred. Please try again.', done: true });

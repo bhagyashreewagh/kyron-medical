@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Phone, PhoneCall, PhoneOff, X } from 'lucide-react';
 import { VoiceCallState } from '../types';
 
@@ -133,11 +134,11 @@ export function VoiceCallButton({ onInitiateCall, patientPhone }: VoiceCallButto
         </div>
       )}
 
-      {/* ── Phone Input Modal ─────────────────────────────────────────────── */}
-      {showModal && (
+      {/* ── Phone Input Modal — rendered via portal to escape parent transforms ── */}
+      {showModal && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(2,11,24,0.8)', backdropFilter: 'blur(8px)' }}
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ background: 'rgba(2,11,24,0.85)', backdropFilter: 'blur(10px)', zIndex: 99999 }}
           onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
         >
           <div
@@ -208,7 +209,8 @@ export function VoiceCallButton({ onInitiateCall, patientPhone }: VoiceCallButto
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
